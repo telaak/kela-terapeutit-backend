@@ -31,8 +31,7 @@ model Therapist {
   languages    String[]
   // orientations Orientation[]
   orientations String[]
-  // therapies    Therapy[]
-  therapist    String[]
+  therapies    Therapy[]
   email        String?
   homepage     String?
   dateAdded    DateTime  @default(now())
@@ -67,13 +66,13 @@ model Therapist {
 //   Therapists Therapist[]
 // }
 
-// model Therapy {
-//   id          Int        @id @default(autoincrement())
-//   muoto       String
-//   lajit       String[]
-//   Therapist   Therapist? @relation(fields: [therapistId], references: [id], onDelete: Cascade)
-//   therapistId Int?
-// }
+model Therapy {
+  id          Int        @id @default(autoincrement())
+  muoto       String
+  lajit       String[]
+  Therapist   Therapist? @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  therapistId Int?
+}
 
 enum Suuntaus {
   PSYKOANALYYTTINEN

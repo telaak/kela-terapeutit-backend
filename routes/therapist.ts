@@ -1,8 +1,7 @@
 import HyperExpress, { SendableData } from "hyper-express";
-import { PrismaClient } from "@prisma/client";
-
+import { prisma } from "..";
+import { Therapist } from "@prisma/client";
 export const therapistRouter = new HyperExpress.Router();
-const prisma = new PrismaClient();
 
 therapistRouter.get("/therapist", async (req, res) => {
   try {
@@ -15,7 +14,11 @@ therapistRouter.get("/therapist", async (req, res) => {
     //     phoneNumbers: true,
     //   },
     // });
-    const therapists = await prisma.therapist.findMany();
+    const therapists = await prisma.therapist.findMany({
+      include: {
+        therapies: true,
+      },
+    });
     res.json(therapists);
   } catch (error) {
     console.error(error);
@@ -24,12 +27,28 @@ therapistRouter.get("/therapist", async (req, res) => {
 });
 
 therapistRouter.post("/therapist", async (req, res) => {
-  const therapist = await req.json();
-  await prisma.therapist.upsert({
-    where: {
-      name: therapist.name,
-    },
-    update: therapist,
-    create: therapist,
-  });
+  try {
+    const therapist = await req.json();
+    const newTherapist = {
+      ...therapist,
+      therapies: {
+        create: therapist.therapies.map((kuntoutus: any) => {
+          return {
+            muoto: kuntoutus.muoto,
+            lajit: kuntoutus.lajit,
+          };
+        }),
+      },
+    };
+    await prisma.therapist.upsert({
+      where: {
+        name: newTherapist.name,
+      },
+      update: newTherapist,
+      create: newTherapist,
+    });
+    res.sendStatus(200);
+  } catch (error) {
+    res.sendStatus(500);
+  }
 });
