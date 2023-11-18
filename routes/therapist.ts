@@ -15,10 +15,21 @@ therapistRouter.get("/therapist", async (req, res) => {
     //     phoneNumbers: true,
     //   },
     // });
-    const therapists = await prisma.therapist.findMany()
+    const therapists = await prisma.therapist.findMany();
     res.json(therapists);
   } catch (error) {
     console.error(error);
     res.sendStatus(500);
   }
+});
+
+therapistRouter.post("/therapist", async (req, res) => {
+  const therapist = await req.json();
+  await prisma.therapist.upsert({
+    where: {
+      name: therapist.name,
+    },
+    update: therapist,
+    create: therapist,
+  });
 });
