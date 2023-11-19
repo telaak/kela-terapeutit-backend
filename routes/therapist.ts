@@ -1,22 +1,27 @@
-import HyperExpress, { SendableData } from "hyper-express";
+import HyperExpress from "hyper-express";
 import { prisma } from "..";
 import { Therapist, Therapy } from "@prisma/client";
 export const therapistRouter = new HyperExpress.Router();
 
 therapistRouter.get("/therapist", async (req, res) => {
   try {
-    // const therapists = await prisma.therapist.findMany({
-    //   include: {
-    //     languages: true,
-    //     orientations: true,
-    //     therapies: true,
-    //     locations: true,
-    //     phoneNumbers: true,
-    //   },
-    // });
     const therapists = await prisma.therapist.findMany({
-      include: {
-        therapies: true,
+      select: {
+        name: true,
+        locations: true,
+        phoneNumbers: true,
+        languages: true,
+        orientations: true,
+        therapies: {
+          select: {
+            lajit: true,
+            muoto: true,
+          },
+        },
+        email: true,
+        homepage: true,
+        lastActive: true,
+        isActive: true,
       },
     });
     res.json(therapists);
