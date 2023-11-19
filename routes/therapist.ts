@@ -1,6 +1,6 @@
 import HyperExpress, { SendableData } from "hyper-express";
 import { prisma } from "..";
-import { Therapist } from "@prisma/client";
+import { Therapist, Therapy } from "@prisma/client";
 export const therapistRouter = new HyperExpress.Router();
 
 therapistRouter.get("/therapist", async (req, res) => {
@@ -28,24 +28,24 @@ therapistRouter.get("/therapist", async (req, res) => {
 
 therapistRouter.post("/therapist", async (req, res) => {
   try {
-    const therapist = await req.json();
-    const newTherapist = {
-      ...therapist,
-      therapies: {
-        create: therapist.therapies.map((kuntoutus: any) => {
-          return {
-            muoto: kuntoutus.muoto,
-            lajit: kuntoutus.lajit,
-          };
-        }),
-      },
-    };
+    const therapist: Therapist & { therapies: Therapy[] } = await req.json();
     await prisma.therapist.upsert({
       where: {
-        name: newTherapist.name,
+        name: therapist.name,
       },
-      update: newTherapist,
-      create: newTherapist,
+      update: {
+        ...therapist,
+        therapies: {
+          deleteMany: {},
+          create: therapist.therapies,
+        },
+      },
+      create: {
+        ...therapist,
+        therapies: {
+          create: therapist.therapies,
+        },
+      },
     });
     res.sendStatus(200);
   } catch (error) {
