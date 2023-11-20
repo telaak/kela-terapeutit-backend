@@ -23,6 +23,9 @@ therapistRouter.get("/therapist", async (req, res) => {
         lastActive: true,
         isActive: true,
       },
+      orderBy: {
+        name: 'asc'
+      }
     });
     res.json(therapists);
   } catch (error) {
