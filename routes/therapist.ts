@@ -1,6 +1,7 @@
 import HyperExpress from "hyper-express";
-import { prisma } from "..";
+import { prisma, purgeCloudflare, revalidateNext } from "..";
 import { Therapist, Therapy } from "@prisma/client";
+import { ParsedEmail } from "../types";
 export const therapistRouter = new HyperExpress.Router();
 
 therapistRouter.get("/therapist", async (req, res) => {
@@ -24,20 +25,20 @@ therapistRouter.get("/therapist", async (req, res) => {
         isActive: true,
       },
       orderBy: {
-        name: 'asc'
-      }
+        name: "asc",
+      },
     });
     res.json(therapists);
   } catch (error) {
     console.error(error);
-    res.sendStatus(500);
+    res.status(500).send();
   }
 });
 
 therapistRouter.post("/therapist", async (req, res) => {
   try {
     const therapist: Therapist & { therapies: Therapy[] } = await req.json();
-    await prisma.therapist.upsert({
+    const upsert = await prisma.therapist.upsert({
       where: {
         name: therapist.name,
       },
@@ -55,8 +56,33 @@ therapistRouter.post("/therapist", async (req, res) => {
         },
       },
     });
-    res.sendStatus(200);
+    res.status(200).send();
   } catch (error) {
-    res.sendStatus(500);
+    res.status(500).send();
+  }
+});
+
+therapistRouter.post("/parse", async (req, res) => {
+  try {
+    const email: ParsedEmail = await req.json();
+    if (email.secret !== process.env.EMAIL_SECRET)
+      return res.status(401).send();
+    const trimmedText = email.text.trim();
+    const trimmedSubject = email.subject.trim()
+    await prisma.therapist.updateMany({
+      where: {
+        email: trimmedText,
+      },
+      data: {
+        lastActive: new Date(),
+        isActive: trimmedSubject === 'enable' ? true : false,
+      },
+    });
+    await revalidateNext();
+    await purgeCloudflare();
+    res.status(200).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).send();
   }
 });

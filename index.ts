@@ -4,6 +4,7 @@ import { therapistRouter } from "./routes/therapist";
 import { WebSocket } from "ws";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import { PrismaClient } from "@prisma/client";
+import { SMSMessage } from "./types";
 
 export const prisma = new PrismaClient({
   log: [
@@ -42,6 +43,12 @@ Server.use("/api", therapistRouter);
 
 const serverPort = Number(process.env.PORT) || 4000;
 
+Server.listen(serverPort)
+  .then((socket) => console.log(`Webserver started on port ${serverPort}`))
+  .catch((error) =>
+    console.log(`Failed to start webserver on port ${serverPort}`)
+  );
+
 const ws = new ReconnectingWebSocket(
   process.env.WEBSOCKET || "ws://127.0.0.1:4000/ws/connect",
   [],
@@ -51,31 +58,6 @@ const ws = new ReconnectingWebSocket(
     minReconnectionDelay: 10,
   }
 );
-
-export type SMSHeader = {
-  encoding: string;
-  smsc: string;
-  smscType: string;
-  smscPlan: string;
-};
-
-export type SMSUdh = {
-  referenceNumber: number;
-  parts: number;
-  part: 1;
-};
-
-export type SMSMessage = {
-  sender: string;
-  index: number;
-  message: string;
-  dateTimeSent: Date;
-  msgStatus: number;
-  header: SMSHeader;
-  udh?: SMSUdh;
-  udhs?: SMSUdh[];
-  rowid?: number | string;
-};
 
 // @ts-ignore:next-line
 ws.addEventListener("message", async (event) => {
@@ -112,14 +94,34 @@ ws.addEventListener("message", async (event) => {
   }
 });
 
-const revalidateNext = async () => {
-  return fetch(
-    `${process.env.NEXT_URL}/api/revalidate?secret=${process.env.REVALIDATE_TOKEN}`
-  ).then((res) => res.json().then((json) => console.log(json)));
+export const revalidateNext = async () => {
+  try {
+    await fetch(
+      `${process.env.NEXT_URL}/api/revalidate?secret=${process.env.REVALIDATE_TOKEN}`
+    ).then((res) => res.json().then((json) => console.log(json)));
+  } catch (error) {
+    console.error(error);
+  }
 };
 
-Server.listen(serverPort)
-  .then((socket) => console.log(`Webserver started on port ${serverPort}`))
-  .catch((error) =>
-    console.log(`Failed to start webserver on port ${serverPort}`)
-  );
+export const purgeCloudflare = async () => {
+  try {
+    await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${process.env.CLOUDFLARE_ZONE}/purge_cache`,
+      {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          Authorization: `Bearer ${process.env.CLOUDFLARE_API_KEY}`,
+        },
+        body: JSON.stringify({
+          purge_everything: true,
+        }),
+      }
+    )
+      .then((res) => res.json())
+      .then(console.log);
+  } catch (error) {
+    console.error(error);
+  }
+};
