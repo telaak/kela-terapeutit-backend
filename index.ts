@@ -5,6 +5,7 @@ import { WebSocket } from "ws";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import { PrismaClient } from "@prisma/client";
 import { SMSMessage } from "./types";
+import { internalRouter } from "./routes/internal";
 
 export const prisma = new PrismaClient({
   log: [
@@ -38,7 +39,7 @@ Server.use(cors());
 Server.options("/*", (request, response) => {
   return response.send("");
 });
-
+Server.use("/internal", internalRouter);
 Server.use("/api", therapistRouter);
 
 const serverPort = Number(process.env.PORT) || 4000;

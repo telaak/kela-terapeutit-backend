@@ -1,6 +1,5 @@
 import HyperExpress from "hyper-express";
 import { prisma, purgeCloudflare, revalidateNext } from "..";
-import { Therapist, Therapy } from "@prisma/client";
 import { ParsedEmail } from "../types";
 export const therapistRouter = new HyperExpress.Router();
 
@@ -35,47 +34,20 @@ therapistRouter.get("/therapist", async (req, res) => {
   }
 });
 
-therapistRouter.post("/therapist", async (req, res) => {
-  try {
-    const therapist: Therapist & { therapies: Therapy[] } = await req.json();
-    const upsert = await prisma.therapist.upsert({
-      where: {
-        name: therapist.name,
-      },
-      update: {
-        ...therapist,
-        therapies: {
-          deleteMany: {},
-          create: therapist.therapies,
-        },
-      },
-      create: {
-        ...therapist,
-        therapies: {
-          create: therapist.therapies,
-        },
-      },
-    });
-    res.status(200).send();
-  } catch (error) {
-    res.status(500).send();
-  }
-});
-
 therapistRouter.post("/parse", async (req, res) => {
   try {
     const email: ParsedEmail = await req.json();
     if (email.secret !== process.env.EMAIL_SECRET)
       return res.status(401).send();
     const trimmedText = email.text.trim();
-    const trimmedSubject = email.subject.trim()
+    const trimmedSubject = email.subject.trim();
     await prisma.therapist.updateMany({
       where: {
         email: trimmedText,
       },
       data: {
         lastActive: new Date(),
-        isActive: trimmedSubject === 'enable' ? true : false,
+        isActive: trimmedSubject === "enable" ? true : false,
       },
     });
     await revalidateNext();
