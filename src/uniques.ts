@@ -1,5 +1,15 @@
 import { PrismaClient } from "@prisma/client";
+
+/**
+ * Prisma Client
+ * @const
+ */
+
 const prisma = new PrismaClient();
+
+/**
+ * Unused, checked for duplicate names and found out they're unique
+ */
 
 async function checkDuplicates() {
   const names = (await prisma.therapist.findMany({})).map((t) => t.name);
@@ -20,4 +30,4 @@ async function checkDuplicates() {
   console.log(duplicates);
 }
 
-checkDuplicates()
+checkDuplicates();

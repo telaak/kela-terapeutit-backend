@@ -1,7 +1,20 @@
 import HyperExpress from "hyper-express";
 import { prisma, purgeCloudflare, revalidateNext } from "..";
 import { ParsedEmail } from "../types";
+
+/**
+ * HyperExpress router
+ * @const
+ * @namespace internalRouter
+ */
+
 export const therapistRouter = new HyperExpress.Router();
+
+/**
+ * Public API route's endpoint for getting all therapists
+ * Selects only the needed fields and omits ids etc for a smaller payload
+ * Links therapy types together
+ */
 
 therapistRouter.get("/therapist", async (req, res) => {
   try {
@@ -33,6 +46,12 @@ therapistRouter.get("/therapist", async (req, res) => {
     res.status(500).send();
   }
 });
+
+/**
+ * Public route for parsing emails from a Cloudflare email worker
+ * Checks for a secret "password" and then updates based on the content and subject
+ * TODO: make it check the sender's address against existing therapist(s)
+ */
 
 therapistRouter.post("/parse", async (req, res) => {
   try {

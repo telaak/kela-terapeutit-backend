@@ -1,8 +1,12 @@
 {
+  "name": "kela-terapeutit-backend",
+  "version": "1.0.0",
+  "author": "telaak",
   "devDependencies": {
     "@types/cors": "^2.8.16",
     "@types/node": "^20.9.1",
-    "@types/ws": "^8.5.9"
+    "@types/ws": "^8.5.9",
+    "typedoc": "^0.25.4"
   },
   "dependencies": {
     "@prisma/client": "^5.6.0",

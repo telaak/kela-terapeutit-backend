@@ -7,6 +7,11 @@ import { PrismaClient } from "@prisma/client";
 import { SMSMessage } from "./types";
 import { internalRouter } from "./routes/internal";
 
+/**
+ * Prisma Client
+ * @const
+ */
+
 export const prisma = new PrismaClient({
   log: [
     {
@@ -28,6 +33,10 @@ export const prisma = new PrismaClient({
   ],
 });
 
+/**
+ * Logging the SQL queries, their parameters and the queryies' duration
+ */
+
 prisma.$on("query", (e) => {
   console.log("Query: " + e.query);
   console.log("Params: " + e.params);
@@ -35,11 +44,15 @@ prisma.$on("query", (e) => {
 });
 
 const Server = new HyperExpress.Server();
+// Cross-origin resource sharing
 Server.use(cors());
+// Fetch and some other functions check for a response from HTTP OPTIONS
 Server.options("/*", (request, response) => {
   return response.send("");
 });
+// Internal route, meant to not be publicly available
 Server.use("/internal", internalRouter);
+// Public API
 Server.use("/api", therapistRouter);
 
 const serverPort = Number(process.env.PORT) || 4000;
@@ -50,6 +63,11 @@ Server.listen(serverPort)
     console.log(`Failed to start webserver on port ${serverPort}`)
   );
 
+/**
+ * Reconnecting websocket for communicating with the SMS API
+ * {@link https://github.com/telaak/serial-gsm-rest}
+ */
+
 const ws = new ReconnectingWebSocket(
   process.env.WEBSOCKET || "ws://127.0.0.1:4000/ws/connect",
   [],
@@ -59,6 +77,12 @@ const ws = new ReconnectingWebSocket(
     minReconnectionDelay: 10,
   }
 );
+
+/**
+ * Event listener for new messages from the SMS gateway
+ * {@link https://github.com/telaak/serial-gsm-rest}
+ * TODO: migrate to an "actual" SMS gateway
+ */
 
 // @ts-ignore:next-line
 ws.addEventListener("message", async (event) => {
@@ -95,6 +119,10 @@ ws.addEventListener("message", async (event) => {
   }
 });
 
+/**
+ * Revalidates the frontend's (Nextjs) index page (table)
+ */
+
 export const revalidateNext = async () => {
   try {
     await fetch(
@@ -104,6 +132,12 @@ export const revalidateNext = async () => {
     console.error(error);
   }
 };
+
+/**
+ * Purges cloudflare's cache
+ * Called after parsing emails
+ * TODO: add it to therapist upserts
+ */
 
 export const purgeCloudflare = async () => {
   try {
